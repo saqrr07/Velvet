@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Velvet Serenity — Queue</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f4f2ed; --surface:#fff; --sf2:#edebe4;
+  --bd:rgba(0,0,0,.09); --bd2:rgba(0,0,0,.17);
+  --tx:#1a1814; --tx2:#6b6760; --tx3:#a09d98;
+  --ink:#1e1c1a; --r:10px; --rl:16px;
+  --sh:0 1px 4px rgba(0,0,0,.07),0 4px 14px rgba(0,0,0,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px;}
+.app{display:grid;grid-template-columns:296px 1fr;min-height:100vh;}
+
+/* SIDEBAR */
+.sb{background:var(--surface);border-left:1px solid var(--bd);display:flex;flex-direction:column;overflow-y:auto;}
+.sb-head{padding:18px 18px 14px;border-bottom:1px solid var(--bd);}
+.sb-name{font-size:15px;font-weight:600;line-height:1.4;}
+.sb-sub{font-size:11px;color:var(--tx3);margin-top:2px;}
+.sb-sec{padding:12px 18px;border-bottom:1px solid var(--bd);}
+.sb-lbl{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;}
+.srv-list{display:flex;flex-direction:column;gap:3px;}
+.srv-row{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:8px;cursor:pointer;border:1px solid transparent;transition:background .1s;}
+.srv-row:hover{background:var(--sf2);}
+.srv-row.on{border-color:var(--c);background:var(--cl);}
+.srv-dot{width:7px;height:7px;border-radius:50%;background:var(--c);flex-shrink:0;}
+.srv-name{flex:1;font-size:12px;}
+.srv-tag{font-size:10px;padding:1px 6px;border-radius:20px;background:var(--cl);color:var(--c);font-weight:500;}
+.srv-min{font-size:10px;color:var(--tx3);}
+.inp{width:100%;padding:8px 11px;border:1px solid var(--bd2);border-radius:var(--r);font-family:inherit;font-size:13px;background:var(--sf2);color:var(--tx);outline:none;transition:border-color .15s;}
+.inp:focus{border-color:var(--ink);background:var(--surface);}
+.inp::placeholder{color:var(--tx3);}
+.btn-issue{margin:12px 18px;width:calc(100% - 36px);padding:11px;background:var(--ink);color:#fff;border:none;border-radius:var(--r);font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;transition:opacity .15s;}
+.btn-issue:hover{opacity:.85;}
+.btn-issue:disabled{opacity:.35;cursor:not-allowed;}
+.sb-foot{margin-top:auto;padding:10px 18px;border-top:1px solid var(--bd);display:flex;gap:7px;}
+.btn-s{flex:1;padding:7px 8px;border:1px solid var(--bd2);background:transparent;color:var(--tx2);border-radius:var(--r);font-family:inherit;font-size:11px;cursor:pointer;transition:all .12s;}
+.btn-s:hover{background:var(--sf2);color:var(--tx);}
+.btn-s.del:hover{background:#fef2f2;color:#b91c1c;border-color:#fca5a5;}
+
+/* MAIN */
+.main{padding:22px;overflow-y:auto;}
+.main-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.main-ttl{font-size:15px;font-weight:600;}
+.main-sub{font-size:11px;color:var(--tx3);margin-top:2px;}
+.clk{font-size:12px;color:var(--tx3);font-variant-numeric:tabular-nums;}
+.depts{display:grid;grid-template-columns:repeat(auto-fill,minmax(216px,1fr));gap:12px;}
+.dcol{background:var(--surface);border-radius:var(--rl);border:1px solid var(--bd);box-shadow:var(--sh);overflow:hidden;}
+.dhead{padding:10px 13px;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--bd);}
+.dbadge{width:28px;height:28px;border-radius:7px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.dname{font-size:12px;font-weight:500;}
+.dwait{font-size:10px;color:var(--tx3);}
+.dbody{padding:7px;display:flex;flex-direction:column;gap:4px;min-height:52px;}
+.qcard{display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);transition:all .15s;}
+.qcard.calling{animation:blnk .75s ease-in-out 5;}
+@keyframes blnk{0%,100%{opacity:1}50%{opacity:.4}}
+.qseq{width:20px;height:20px;border-radius:50%;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.qnum{font-size:13px;font-weight:700;min-width:44px;}
+.qinfo{flex:1;overflow:hidden;}
+.qclient{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.qstaff{font-size:10px;color:var(--tx3);font-weight:400;}
+.qsrvs{font-size:10px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.qmulti{font-size:9px;padding:1px 5px;border-radius:20px;background:#fef3c7;color:#92400e;font-weight:600;white-space:nowrap;flex-shrink:0;}
+.qacts{display:flex;gap:3px;flex-shrink:0;}
+.qbtn{padding:3px 6px;font-size:10px;border:1px solid var(--bd2);border-radius:5px;background:var(--surface);cursor:pointer;font-family:inherit;transition:all .1s;white-space:nowrap;color:var(--tx2);}
+.qbtn:hover{background:var(--sf2);}
+.qbtn.call{color:#1d6fb8;border-color:#bfdbfe;}
+.qbtn.call:hover{background:#eff6ff;}
+.qbtn.done{color:#15803d;border-color:#bbf7d0;}
+.qbtn.done:hover{background:#f0fdf4;}
+.empty{display:flex;align-items:center;justify-content:center;padding:16px 0;font-size:11px;color:var(--tx3);}
+
+/* OVERLAYS */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px;}
+.overlay.on{display:flex;}
+
+/* ticket modal */
+.tmodal{background:var(--surface);border-radius:var(--rl);padding:26px 28px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.tm-salon{font-size:12px;color:var(--tx3);margin-bottom:2px;}
+.tm-ttl{font-size:20px;font-weight:600;margin-bottom:14px;}
+.tm-tickets{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:14px;}
+.tm-item{padding:11px 18px;border-radius:var(--r);border:2px solid var(--c);background:var(--cl);text-align:center;}
+.tm-dept{font-size:10px;font-weight:700;color:var(--c);margin-bottom:2px;}
+.tm-num{font-size:30px;font-weight:700;color:var(--c);line-height:1;}
+.tm-srvs{font-size:10px;color:var(--tx2);margin-top:3px;}
+.tm-info{font-size:13px;color:var(--tx2);margin-bottom:4px;}
+.tm-wait{font-size:12px;color:var(--tx3);margin-bottom:18px;}
+.tm-acts{display:flex;gap:10px;justify-content:center;}
+.btnm{padding:9px 20px;border-radius:var(--r);border:1px solid var(--bd2);background:transparent;color:var(--tx);font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:all .12s;}
+.btnm:hover{background:var(--sf2);}
+.btnm.pri{background:var(--ink);color:#fff;border-color:transparent;}
+.btnm.pri:hover{opacity:.85;}
+
+/* settings modal */
+.smodal{background:var(--surface);border-radius:var(--rl);max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto;}
+.sm-head{padding:16px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;}
+.sm-head h3{font-size:14px;font-weight:600;}
+.btnx{width:26px;height:26px;border-radius:50%;border:1px solid var(--bd2);background:transparent;cursor:pointer;font-size:16px;color:var(--tx2);display:flex;align-items:center;justify-content:center;}
+.sm-body{padding:16px 20px;}
+.sm-sec{margin-bottom:20px;}
+.sm-sec h4{font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px;}
+.row-inp{display:flex;flex-direction:column;gap:7px;}
+.row-inp label{font-size:11px;color:var(--tx2);}
+.row-inp input{padding:7px 10px;border:1px solid var(--bd2);border-radius:var(--r);font-family:inherit;font-size:13px;color:var(--tx);background:var(--sf2);outline:none;}
+.row-inp input:focus{background:var(--surface);border-color:var(--ink);}
+.radio-row{display:flex;gap:9px;}
+.ropt{flex:1;padding:8px;border:1px solid var(--bd2);border-radius:var(--r);cursor:pointer;text-align:center;font-size:13px;background:var(--sf2);transition:all .12s;}
+.ropt.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+.dedit-list,.sedit-list{display:flex;flex-direction:column;gap:5px;}
+.dedit-row,.sedit-row{display:flex;gap:6px;align-items:center;background:var(--sf2);padding:6px 9px;border-radius:var(--r);border:1px solid var(--bd);}
+.dedit-row input,.sedit-row input,.sedit-row select{border:1px solid var(--bd2);border-radius:6px;background:var(--surface);color:var(--tx);font-family:inherit;font-size:12px;padding:4px 6px;outline:none;}
+.din-id{width:40px;text-align:center;font-weight:700;}
+.din-name{flex:1;}
+.din-color{width:34px;height:26px;padding:1px 2px;cursor:pointer;border-radius:4px;}
+.sin-name{flex:2;}
+.sin-dept{flex:1.2;}
+.sin-dur{width:50px;}
+.btn-del{background:transparent;border:none;color:var(--tx3);cursor:pointer;font-size:15px;padding:0 2px;line-height:1;}
+.btn-del:hover{color:#b91c1c;}
+.btn-addsv{margin-top:7px;padding:6px 12px;border:1px dashed var(--bd2);border-radius:var(--r);background:transparent;color:var(--tx3);font-family:inherit;font-size:12px;cursor:pointer;width:100%;}
+.btn-addsv:hover{background:var(--sf2);color:var(--tx);}
+.sm-foot{padding:12px 20px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:8px;}
+
+/* PRINT */
+@media print{
+  @page{margin:0;}
+  body *{visibility:hidden!important;}
+  #parea,#parea *{visibility:visible!important;}
+  #parea{position:fixed!important;inset:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;padding:0!important;background:white!important;}
+}
+#parea{display:none;}
+.rcpt{font-family:'Courier New',monospace;background:white;color:#000;padding:10px 8px;text-align:center;line-height:1.6;}
+.rcpt.w58{width:58mm;}
+.rcpt.w80{width:80mm;}
+.rcpt hr{border:none;border-top:1px dashed #000;margin:5px 0;}
+.rcpt .rs{font-size:14px;font-weight:bold;}
+.rcpt .rsub{font-size:10px;}
+.rcpt .rnum{font-size:44px;font-weight:bold;line-height:1.1;letter-spacing:2px;}
+.rcpt .rdept{font-size:13px;font-weight:bold;}
+.rcpt .rseq{font-size:12px;}
+.rcpt .rcli{font-size:12px;}
+.rcpt .rsrv{font-size:11px;text-align:right;padding:0 4px;}
+.rcpt .rwait{font-size:12px;}
+.rcpt .rtime{font-size:10px;}
+.rcpt .rfoot{font-size:10px;margin-top:3px;}
+.rcpt .rlbl{font-size:10px;font-weight:700;letter-spacing:.06em;margin-bottom:2px;}
+.rcpt .rlbl-staff{background:#000;color:#fff;padding:1px 6px;display:inline-block;}
+.rcpt .rstaff{font-size:13px;font-weight:700;margin-bottom:3px;}
+.rcpt .rmulti{margin:5px 0;padding:5px 4px;border:1px dashed #000;}
+.cutline{font-family:'Courier New',monospace;font-size:11px;text-align:center;color:#000;background:white;padding:3px 0;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sb">
+    <div class="sb-head">
+      <div class="sb-name" id="disp-name">Velvet Serenity<br><span style="font-weight:400;font-size:13px">فيلفيت سيرينيتي</span></div>
+      <div class="sb-sub">نظام الانتظار — Queue System</div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-lbl">الخدمات — Services</div>
+      <div class="srv-list" id="srv-list"></div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-lbl">اسم العميلة — Client Name</div>
+      <input class="inp" id="inp-client" type="text" placeholder="اختياري / Optional" maxlength="30" autocomplete="off">
+    </div>
+    <div class="sb-sec">
+      <div class="sb-lbl">الموظفة — Staff</div>
+      <input class="inp" id="inp-staff" type="text" placeholder="اختياري / Optional" maxlength="30" autocomplete="off">
+    </div>
+    <button class="btn-issue" id="btn-issue" onclick="issueTicket()" disabled>
+      إصدار تذكرة — Issue Ticket
+    </button>
+    <div class="sb-foot">
+      <button class="btn-s" onclick="openSettings()">⚙ إعدادات</button>
+      <button class="btn-s del" onclick="doReset()">↺ تصفير</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="main-hdr">
+      <div>
+        <div class="main-ttl">قوائم الانتظار</div>
+        <div class="main-sub" id="main-sub">لا يوجد انتظار</div>
+      </div>
+      <div class="clk" id="clk"></div>
+    </div>
+    <div class="depts" id="depts"></div>
+  </main>
+</div>
+
+<!-- TICKET MODAL -->
+<div class="overlay" id="ov-ticket">
+  <div class="tmodal">
+    <div class="tm-salon" id="tm-salon"></div>
+    <div class="tm-ttl">تذكرة الانتظار</div>
+    <div class="tm-tickets" id="tm-tickets"></div>
+    <div class="tm-info" id="tm-info"></div>
+    <div class="tm-wait" id="tm-wait"></div>
+    <div class="tm-acts">
+      <button class="btnm" onclick="closeTicket()">إغلاق</button>
+      <button class="btnm pri" onclick="printLast()">🖨 طباعة نسختين</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="overlay" id="ov-settings">
+  <div class="smodal">
+    <div class="sm-head">
+      <h3>الإعدادات — Settings</h3>
+      <button class="btnx" onclick="closeSettings()">×</button>
+    </div>
+    <div class="sm-body">
+      <div class="sm-sec">
+        <h4>معلومات الصالون</h4>
+        <div class="row-inp">
+          <label>اسم الصالون</label>
+          <input id="cfg-name" type="text">
+          <label>رسالة ترحيب على التذكرة</label>
+          <input id="cfg-tag" type="text">
+        </div>
+      </div>
+      <div class="sm-sec">
+        <h4>حجم ورقة الطابعة</h4>
+        <div class="radio-row">
+          <div class="ropt" id="rb58" onclick="setPW(58)">58 mm</div>
+          <div class="ropt on" id="rb80" onclick="setPW(80)">80 mm</div>
+        </div>
+      </div>
+      <div class="sm-sec">
+        <h4>الأقسام</h4>
+        <div class="dedit-list" id="dedit"></div>
+      </div>
+      <div class="sm-sec">
+        <h4>الخدمات</h4>
+        <div style="font-size:10px;color:var(--tx3);margin-bottom:7px">الاسم — القسم — المدة (دقيقة)</div>
+        <div class="sedit-list" id="sedit"></div>
+        <button class="btn-addsv" onclick="addSvcRow()">+ إضافة خدمة</button>
+      </div>
+    </div>
+    <div class="sm-foot">
+      <button class="btnm" onclick="closeSettings()">إلغاء</button>
+      <button class="btnm pri" onclick="saveSettings()">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<div id="parea"></div>
+
+<script>
+// CONFIG
+const CFG = {
+  name:'Velvet Serenity | فيلفيت سيرينيتي',
+  tag:"أهلاً بكِ، نسعد بخدمتك — Welcome, we're delighted to serve you",
+  pw:80,
+  depts:[
+    {id:'H', name:'الشعر | Hair',       color:'#6C5CE7', light:'#f0effe'},
+    {id:'N', name:'الأظافر | Nails',    color:'#00897B', light:'#e0f5f2'},
+    {id:'S', name:'التسريح | Styling',  color:'#E65100', light:'#fef0e6'},
+    {id:'F', name:'البشرة | Skin',      color:'#C62828', light:'#fdeaea'},
+  ],
+  services:[
+    {id:'s1', name:'صبغة | Hair Color',           dept:'H', dur:90},
+    {id:'s2', name:'قص | Haircut',                dept:'H', dur:45},
+    {id:'s3', name:'معالجات | Hair Treatment',    dept:'H', dur:60},
+    {id:'s4', name:'استشوار / تسريحة | Blowout',  dept:'S', dur:40},
+    {id:'s5', name:'مانكير | Manicure',           dept:'N', dur:40},
+    {id:'s6', name:'بدكير | Pedicure',            dept:'N', dur:50},
+    {id:'s7', name:'جل | Gel Nails',              dept:'N', dur:60},
+    {id:'s8', name:'تنظيف بشرة | Facial Cleanup', dept:'F', dur:45},
+    {id:'s9', name:'تشقير حواجب | Brow Tinting',  dept:'F', dur:20},
+  ]
+};
+
+// STATE
+let counters={}, queues={}, sel=new Set(), lastPrint=null;
+
+function initQ(){
+  CFG.depts.forEach(d=>{
+    if(!counters[d.id]) counters[d.id]=0;
+    if(!queues[d.id])   queues[d.id]=[];
+  });
+}
+initQ();
+
+// HELPERS
+const D = id => CFG.depts.find(d=>d.id===id);
+const S = id => CFG.services.find(s=>s.id===id);
+
+function waitMins(did){
+  return (queues[did]||[]).reduce((sum,item)=>{
+    return sum + Math.max(...item.svcs.map(sid=>S(sid)?.dur||30));
+  },0);
+}
+function fmtWait(m){
+  if(m===0) return 'تقريباً الآن / Very soon';
+  if(m<60)  return `~${m} دقيقة / min`;
+  const h=Math.floor(m/60),r=m%60;
+  return r ? `${h}س ${r}د` : `${h} ساعة`;
+}
+function nowStr(){
+  const d=new Date();
+  return d.toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'})
+    +' — '+d.toLocaleDateString('ar-SA',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+}
+
+// CLOCK
+setInterval(()=>{
+  const el=document.getElementById('clk');
+  if(el) el.textContent=new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+},1000);
+
+// RENDER SERVICES
+function renderSvcs(){
+  const el=document.getElementById('srv-list');
+  el.innerHTML='';
+  CFG.services.forEach(s=>{
+    const d=D(s.dept); if(!d) return;
+    const row=document.createElement('div');
+    row.className='srv-row'+(sel.has(s.id)?' on':'');
+    row.style.cssText=`--c:${d.color};--cl:${d.light}`;
+    row.innerHTML=`<div class="srv-dot"></div><span class="srv-name">${s.name}</span><span class="srv-tag">${d.id}</span><span class="srv-min">${s.dur}د</span>`;
+    row.onclick=()=>{
+      sel.has(s.id)?sel.delete(s.id):sel.add(s.id);
+      renderSvcs();
+      document.getElementById('btn-issue').disabled=sel.size===0;
+    };
+    el.appendChild(row);
+  });
+}
+
+// ISSUE TICKET
+function issueTicket(){
+  const client=document.getElementById('inp-client').value.trim()||'عميلة';
+  const staff=document.getElementById('inp-staff').value.trim();
+  const dids=[...new Set([...sel].map(sid=>S(sid)?.dept).filter(Boolean))];
+  if(!dids.length) return;
+  const tickets={};
+
+  dids.forEach(did=>{
+    const waitNow=waitMins(did);   // wait BEFORE adding this client
+    counters[did]++;
+    const num=did+'-'+counters[did];
+    const mySvcs=[...sel].filter(sid=>S(sid)?.dept===did);
+    queues[did].push({num, seq:queues[did].length+1, client, staff, svcs:mySvcs,
+      multi:dids.length>1, wait:waitNow, at:Date.now(), calling:false});
+    tickets[did]={num, wait:waitNow};
+  });
+
+  lastPrint={client,staff,tickets,dids,svcs:[...sel]};
+
+  // modal
+  document.getElementById('tm-salon').textContent=CFG.name;
+  document.getElementById('tm-info').textContent='العميلة: '+client+(staff?'  |  الموظفة: '+staff:'');
+  const maxWait=Math.max(...dids.map(did=>tickets[did].wait));
+  document.getElementById('tm-wait').textContent='وقت الانتظار: '+fmtWait(maxWait);
+
+  const tc=document.getElementById('tm-tickets');
+  tc.innerHTML='';
+  dids.forEach(did=>{
+    const d=D(did), t=tickets[did];
+    const snames=[...sel].filter(sid=>S(sid)?.dept===did).map(sid=>S(sid)?.name).join('، ');
+    const item=document.createElement('div');
+    item.className='tm-item';
+    item.style.cssText=`--c:${d.color};--cl:${d.light}`;
+    item.innerHTML=`<div class="tm-dept">${d.name}</div><div class="tm-num">${t.num}</div><div class="tm-srvs">${snames}</div>`;
+    tc.appendChild(item);
+  });
+
+  document.getElementById('ov-ticket').classList.add('on');
+  document.getElementById('inp-client').value='';
+  document.getElementById('inp-staff').value='';
+  sel.clear(); renderSvcs();
+  document.getElementById('btn-issue').disabled=true;
+  renderQueues();
+}
+function closeTicket(){document.getElementById('ov-ticket').classList.remove('on');}
+
+// RENDER QUEUES
+function renderQueues(){
+  const wrap=document.getElementById('depts');
+  wrap.innerHTML='';
+  let total=0;
+
+  CFG.depts.forEach(d=>{
+    const q=queues[d.id]||[];
+    total+=q.length;
+
+    const col=document.createElement('div');
+    col.className='dcol';
+
+    const hdr=document.createElement('div');
+    hdr.className='dhead';
+    hdr.innerHTML=`<div class="dbadge" style="background:${d.color}">${d.id}</div>
+      <div><div class="dname">${d.name}</div>
+      <div class="dwait">${q.length} في الانتظار · ~${waitMins(d.id)}د</div></div>`;
+    col.appendChild(hdr);
+
+    const body=document.createElement('div');
+    body.className='dbody';
+
+    if(q.length===0){
+      body.innerHTML='<div class="empty">لا يوجد انتظار</div>';
+    } else {
+      q.forEach((item,idx)=>{
+        const card=document.createElement('div');
+        card.className='qcard'+(item.calling?' calling':'');
+        const snames=item.svcs.map(sid=>S(sid)?.name||'').join('، ');
+        const waited=Math.round((Date.now()-item.at)/60000);
+        const ws=waited<1?'للتو':waited+'د';
+        const did=d.id;
+        card.innerHTML=
+          `<div class="qseq" style="background:${d.color}">${item.seq}</div>
+           <div class="qnum" style="color:${d.color}">${item.num}</div>
+           <div class="qinfo">
+             <div class="qclient">${item.client}${item.staff?` <span class="qstaff">— ${item.staff}</span>`:''}</div>
+             <div class="qsrvs">${snames} · ${ws}</div>
+           </div>
+           ${item.multi?'<span class="qmulti">متعدد</span>':''}
+           <div class="qacts">
+             <button class="qbtn call" onclick="callClient('${did}',${idx})">نادِ</button>
+             <button class="qbtn"      onclick="printQ('${did}',${idx})">🖨</button>
+             <button class="qbtn done" onclick="doneClient('${did}',${idx})">✓</button>
+           </div>`;
+        body.appendChild(card);
+      });
+    }
+    col.appendChild(body);
+    wrap.appendChild(col);
+  });
+
+  document.getElementById('main-sub').textContent=
+    total===0?'لا يوجد انتظار':`${total} عميلة في الانتظار`;
+}
+
+function callClient(did,idx){
+  if(!queues[did]?.[idx]) return;
+  queues[did][idx].calling=true; renderQueues();
+  setTimeout(()=>{if(queues[did]?.[idx]) queues[did][idx].calling=false; renderQueues();},5000);
+}
+function doneClient(did,idx){
+  queues[did].splice(idx,1);
+  queues[did].forEach((it,i)=>it.seq=i+1);
+  renderQueues();
+}
+
+// PRINT — dual copy
+function buildCopy(tickets,dids,client,staff,svcsArr,isClient){
+  const w=CFG.pw;
+  let h=`<div class="rcpt w${w}">`;
+  h+=`<div class="rs">${CFG.name}</div>`;
+  if(isClient) h+=`<div class="rsub">${CFG.tag}</div>`;
+  h+=`<hr>`;
+  h+=`<div class="rlbl ${isClient?'':'rlbl-staff'}">${isClient?'نسخة العميلة / Client Copy':'نسخة الموظفة / Staff Copy'}</div>`;
+  if(!isClient&&staff) h+=`<div class="rstaff">الموظفة: ${staff}</div>`;
+
+  if(dids.length===1){
+    const did=dids[0], d=D(did), t=tickets[did];
+    const ms=svcsArr.filter(sid=>S(sid)?.dept===did).map(sid=>S(sid)?.name).join('، ');
+    h+=`<div class="rdept">${d.name}</div>`;
+    h+=`<div class="rnum">${t.num}</div>`;
+    h+=`<div class="rcli">العميلة: ${client}</div>`;
+    h+=`<div class="rsrv">${ms}</div><hr>`;
+    h+=`<div class="rwait">وقت الانتظار: ${fmtWait(t.wait)}</div>`;
+  } else {
+    h+=`<div class="rcli">العميلة: ${client}</div><hr>`;
+    dids.forEach(did=>{
+      const d=D(did), t=tickets[did];
+      const ms=svcsArr.filter(sid=>S(sid)?.dept===did).map(sid=>S(sid)?.name).join('، ');
+      h+=`<div class="rmulti"><div class="rdept">${d.name}</div><div class="rnum" style="font-size:30px">${t.num}</div><div class="rsrv">${ms}</div><div class="rwait">${fmtWait(t.wait)}</div></div>`;
+    });
+  }
+  h+=`<hr><div class="rtime">${nowStr()}</div>`;
+  if(isClient) h+=`<div class="rfoot">شكراً لثقتك بنا 💙</div>`;
+  h+=`</div>`;
+  return h;
+}
+
+function doPrint(html){
+  const a=document.getElementById('parea');
+  a.innerHTML=html; a.style.display='block';
+  setTimeout(()=>{window.print();a.style.display='none';a.innerHTML='';},120);
+}
+function printLast(){
+  if(!lastPrint) return;
+  const{client,staff,tickets,dids,svcs:sv}=lastPrint;
+  doPrint(buildCopy(tickets,dids,client,staff,sv,true)
+    +'<div class="cutline">✂ ──────────────────────────────</div>'
+    +buildCopy(tickets,dids,client,staff,sv,false));
+}
+function printQ(did,idx){
+  const item=queues[did]?.[idx]; if(!item) return;
+  const d=D(did), w=CFG.pw;
+  const waited=Math.round((Date.now()-item.at)/60000);
+  const ws=waited<1?'للتو':waited+' دقيقة';
+  const snames=item.svcs.map(sid=>S(sid)?.name||'').join('، ');
+  function copy(isClient){
+    let h=`<div class="rcpt w${w}">`;
+    h+=`<div class="rs">${CFG.name}</div><hr>`;
+    h+=`<div class="rlbl ${isClient?'':'rlbl-staff'}">${isClient?'نسخة العميلة / Client Copy':'نسخة الموظفة / Staff Copy'}</div>`;
+    if(!isClient&&item.staff) h+=`<div class="rstaff">الموظفة: ${item.staff}</div>`;
+    h+=`<div class="rdept">${d.name}</div>`;
+    h+=`<div class="rnum">${item.num}</div>`;
+    h+=`<div class="rseq">الترتيب في القسم: ${item.seq}</div>`;
+    h+=`<div class="rcli">العميلة: ${item.client}</div>`;
+    h+=`<div class="rsrv">${snames}</div><hr>`;
+    h+=`<div class="rwait">انتظرت: ${ws}</div>`;
+    h+=`<div class="rtime">${nowStr()}</div></div>`;
+    return h;
+  }
+  doPrint(copy(true)+'<div class="cutline">✂ ──────────────────────────────</div>'+copy(false));
+}
+
+// RESET
+function doReset(){
+  if(!confirm('تصفير جميع قوائم الانتظار والأرقام؟')) return;
+  counters={}; queues={}; initQ(); renderQueues();
+}
+
+// SETTINGS
+function openSettings(){
+  document.getElementById('cfg-name').value=CFG.name;
+  document.getElementById('cfg-tag').value=CFG.tag;
+  document.getElementById('rb58').classList.toggle('on',CFG.pw===58);
+  document.getElementById('rb80').classList.toggle('on',CFG.pw===80);
+  renderDeptEditor(); renderSvcEditor();
+  document.getElementById('ov-settings').classList.add('on');
+}
+function closeSettings(){document.getElementById('ov-settings').classList.remove('on');}
+function setPW(w){
+  CFG.pw=w;
+  document.getElementById('rb58').classList.toggle('on',w===58);
+  document.getElementById('rb80').classList.toggle('on',w===80);
+}
+function renderDeptEditor(){
+  const el=document.getElementById('dedit'); el.innerHTML='';
+  CFG.depts.forEach((d,i)=>{
+    const row=document.createElement('div'); row.className='dedit-row';
+    row.innerHTML=`<input class="din-id" type="text" value="${d.id}" maxlength="2" data-i="${i}" data-f="id">
+      <input class="din-name" type="text" value="${d.name}" data-i="${i}" data-f="name">
+      <input class="din-color" type="color" value="${d.color}" data-i="${i}" data-f="color">`;
+    el.appendChild(row);
+  });
+}
+function renderSvcEditor(){
+  const el=document.getElementById('sedit'); el.innerHTML='';
+  CFG.services.forEach((s,i)=>{
+    const row=document.createElement('div'); row.className='sedit-row';
+    const opts=CFG.depts.map(d=>`<option value="${d.id}" ${d.id===s.dept?'selected':''}>${d.id} – ${d.name}</option>`).join('');
+    row.innerHTML=`<input class="sin-name" type="text" value="${s.name}" placeholder="اسم الخدمة">
+      <select class="sin-dept">${opts}</select>
+      <input class="sin-dur" type="number" value="${s.dur}" min="5" max="300">
+      <button class="btn-del" onclick="this.closest('.sedit-row').remove()">×</button>`;
+    el.appendChild(row);
+  });
+}
+function addSvcRow(){
+  const el=document.getElementById('sedit');
+  const row=document.createElement('div'); row.className='sedit-row';
+  const opts=CFG.depts.map(d=>`<option value="${d.id}">${d.id} – ${d.name}</option>`).join('');
+  row.innerHTML=`<input class="sin-name" type="text" value="" placeholder="اسم الخدمة">
+    <select class="sin-dept">${opts}</select>
+    <input class="sin-dur" type="number" value="30" min="5" max="300">
+    <button class="btn-del" onclick="this.closest('.sedit-row').remove()">×</button>`;
+  el.appendChild(row);
+  row.querySelector('.sin-name').focus();
+}
+function saveSettings(){
+  CFG.name=document.getElementById('cfg-name').value.trim()||CFG.name;
+  CFG.tag=document.getElementById('cfg-tag').value.trim();
+  // update header
+  const parts=CFG.name.split('|');
+  document.getElementById('disp-name').innerHTML=
+    parts.length>1
+      ? parts[0].trim()+'<br><span style="font-weight:400;font-size:13px">'+parts[1].trim()+'</span>'
+      : CFG.name;
+  // depts
+  CFG.depts=[...document.querySelectorAll('.dedit-row')].map(row=>({
+    id:   row.querySelector('[data-f="id"]').value.trim().toUpperCase()||'X',
+    name: row.querySelector('[data-f="name"]').value.trim()||'قسم',
+    color:row.querySelector('[data-f="color"]').value||'#888',
+    light:row.querySelector('[data-f="color"]').value+'22',
+  }));
+  // services
+  CFG.services=[...document.querySelectorAll('.sedit-row')].map((row,i)=>({
+    id:'sv'+Date.now()+i,
+    name:row.querySelector('.sin-name').value.trim()||'خدمة',
+    dept:row.querySelector('.sin-dept').value,
+    dur:parseInt(row.querySelector('.sin-dur').value)||30
+  })).filter(s=>s.name.length>0);
+  // ensure queues
+  CFG.depts.forEach(d=>{
+    if(!queues[d.id])   queues[d.id]=[];
+    if(!counters[d.id]) counters[d.id]=0;
+  });
+  sel.clear(); closeSettings(); renderSvcs(); renderQueues();
+}
+
+// LIVE REFRESH + BOOT
+setInterval(renderQueues,30000);
+renderSvcs();
+renderQueues();
+</script>
+</body>
+</html>
